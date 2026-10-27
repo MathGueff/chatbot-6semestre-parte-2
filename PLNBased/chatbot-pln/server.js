@@ -7,6 +7,15 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+const test = {
+  "saudacao": "Olá! Em que posso te ajudar hoje?",
+  "pedido_status": "Para consultar seu pedido, informe o número ou e-mail da compra.",
+  "agradecimento": "De nada! Estou sempre à disposição",
+  "preço": "Os nossos valores são os mais diversos, consulte a tabela de preço em www.com",
+  "ajuda": "Com o que posso te ajudar hoje?",
+  "cancelamento": "Tem certeza que deseja cancelar? Nossos planos são ótimos"
+}
+
 // Classificador Bayesiano
 const classifier = new natural.BayesClassifier();
 
@@ -22,26 +31,31 @@ classifier.addDocument("acompanhar pedido", "pedido_status");
 classifier.addDocument("obrigado", "agradecimento");
 classifier.addDocument("valeu", "agradecimento");
 
+classifier.addDocument("quanto é", "preço");
+classifier.addDocument("qual o valor", "preço");
+
+classifier.addDocument("estou em dúvida", "ajuda");
+classifier.addDocument("socorro", "ajuda");
+
+classifier.addDocument("eu gostaria de cancelar", "cancelamento");
+classifier.addDocument("odiei", "cancelamento");
+
 classifier.train();
 
 app.post("/chat", (req, res) => {
-  const { message } = req.body;
-  const intent = classifier.classify(message.toLowerCase());
-  let reply = "Desculpe, não entendi.";
-
-  switch (intent) {
-    case "saudacao":
-      reply = "Olá! Em que posso te ajudar hoje?";
-      break;
-    case "pedido_status":
-      reply = "Para consultar seu pedido, informe o número ou e-mail da compra.";
-      break;
-    case "agradecimento":
-      reply = "De nada! Estou sempre à disposição";
-      break;
+  try {
+    const { message } = req.body;
+    const intent = classifier.classify(message.toLowerCase());
+    let reply = "Desculpe, não entendi.";
+  
+    reply = test[intent]
+    
+    res.json({ reply, intent });
+  } catch (error) {
+    res.status(500).json({
+      message: "Ops, parece que ocorreu um problema com o nosso chatbot"
+    })
   }
-
-  res.json({ reply, intent });
 });
 
 app.listen(3000, () => console.log("Chatbot PLN rodando na porta 3000"));
